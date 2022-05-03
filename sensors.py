@@ -4,120 +4,205 @@ import RPi.GPIO as GPIO
 import time
 import csv
 
-obstaclePin = 17 # obstacle module pin = GPIO17 (BCM) / 11 (board)
+obstaclePin = 17  # obstacle module pin = GPIO17 (BCM) / 11 (board)
 pirPin = 27  # PIR motion pin = GPIO27 (BCM) / 13 (board)
-trigFront = 23 # ultrasonic module trig pin = GPIO23 (BCM) / 16 (board)
-echoFront = 24 # ultrasonic module echo pin = GPIO24 (BCM) / 18 (board)
+trigPin = 23  # ultrasonic module trig pin = GPIO23 (BCM) / 16 (board)
+echoPin = 24  # ultrasonic module echo pin = GPIO24 (BCM) / 18 (board)
 
-trigBack = 20
-echoBack = 16
+# trigBack = 20
+# echoBack = 16
 
-outLog = 'outlog.csv'
-fields = ['disFront', 'disBack', 'pirVal', 'obstacle']
+phaseLogName = 'phases.log'
+outLogName = 'outlog.csv'
+# fields = ['disFront', 'disBack', 'pirVal', 'obstacle']
+fields = ['motion']
 
-phase = 'start'
+phaseLog = open(phaseLogName, 'a+')
+outLog = open(outLogName, 'a+')
+writer = csv.DictWriter(outLog, fieldnames = fields)
+
+currPhase = ['']
 phases = []
 
 
-def printPhase(phase,full = False):
+def logPhase(phase, full = False):
+    currPhase[0] = phase
+    phases.append(phase)
+
     if (full == True):
         print(phases)
-    else:
-        phases.append(phase)
-        print(phase)
 
-printPhase(phase)
 
-with open(outLog, 'w') as log:
-    phase = 'clear log'
-    printPhase(phase)
-    log.write("")
+def clearLog():
+    logPhase('clearLog')
+    phaseLog.truncate(0)
+    outLog.truncate(0)
+    writer.writeheader()
+
 
 def setup():
-    phase = 'setup'
-    printPhase(phase)
+    logPhase('setup')
+
+    clearLog()
+
     GPIO.setmode(GPIO.BCM)  # Set the GPIO modes to BCM Numbering
 
     GPIO.setup(pirPin, GPIO.IN)
-    GPIO.setup(obstaclePin, GPIO.IN, pull_up_down = GPIO.PUD_UP)
-    GPIO.setup(trigFront, GPIO.OUT)
-    GPIO.setup(echoFront, GPIO.IN)
-    GPIO.setup(trigBack, GPIO.OUT)
-    GPIO.setup(echoBack, GPIO.IN)
+    # GPIO.setup(obstaclePin, GPIO.IN, pull_up_down = GPIO.PUD_UP)
+    # GPIO.setup(trigFront, GPIO.OUT)
+    # GPIO.setup(echoFront, GPIO.IN)
+    # GPIO.setup(trigBack, GPIO.OUT)
+    # GPIO.setup(echoBack, GPIO.IN)
 
 
-def distance(sensor):
-    phase = sensor + "Start"
+def getDist(sensor):
+    logPhase('distFront')
+    global trigFront, echoFront, trigBack, echoBack  # Allow access to 'trig' and 'echo' constants
 
     if (sensor == 'front'):
-        printPhase(phase)
-        trig = trigFront
-        echo = echoFront
-        
+        if GPIO.input(echoFront):  # If the 'Echo' pin is already high
+            return 100.000  # then exit with 100 (sensor fault)
+    elif (sensor == 'back'):
+        if GPIO.input(echoBack):  # If the 'Echo' pin is already high
+            return 100.000  # then exit with 100 (sensor fault)
     else:
-        printPhase(phase)
-        trig = trigBack
-        echo = echoBack
+        raise Exception('invalid distance sensor')
 
-    GPIO.output(trig, 0)
-    time.sleep(0.000002)
+    distance = 0  # Set initial distance to zero
 
-    GPIO.output(trig, 1)
-    time.sleep(0.00001)
-    GPIO.output(trig, 0)
+    if (sensor == 'front'):
+        GPIO.output(trigFront, False)  # Ensure the 'Trig' pin is low for at
+    elif (sensor == 'back'):
+        GPIO.output(trigBack, False)  # Ensure the 'Trig' pin is low for at
+    else:
+        raise Exception('invalid distance sensor')
 
-    while GPIO.input(echo) == 0:
-        a = 0
-    time1 = time.time()
-    while GPIO.input(echo) == 1:
-        a = 1
-    time2 = time.time()
+    time.sleep(0.05)  # least 50mS (recommended re-sample time)
 
-    phase = sensor + "End"
-    printPhase(phase)
+    if (sensor == 'front'):
+        GPIO.output(trigFront, True)  # Turn on the 'Trig' pin for 10uS (ish!)
+    elif (sensor == 'back'):
+        GPIO.output(trigBack, True)  # Turn on the 'Trig' pin for 10uS (ish!)
+    else:
+        raise Exception('invalid distance sensor')
 
-    during = time2 - time1
-    return during * 340 / 2 * 100
+    dummy_variable = 0  # No need to use the 'time' module here,
+    dummy_variable = 0  # a couple of 'dummy' statements will do fine
 
-def MAP(x, in_min, in_max, out_min, out_max):
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+    if (sensor == 'front'):
+        GPIO.output(trigFront, False)  # Turn off the 'Trig' pin
+    elif (sensor == 'back'):
+        GPIO.output(trigBack, False)  # Turn off the 'Trig' pin
+    else:
+        raise Exception('invalid distance sensor')
+
+    time1, time2 = time.time(), time.time()  # Set inital time values to current time
+
+    if (sensor == 'front'):
+        while not GPIO.input(echoFront):  # Wait for the start of the 'Echo' pulse
+            time1 = time.time()  # Get the time the 'Echo' pin goes high
+            if time1 - time2 > 0.02:  # If the 'Echo' pin doesn't go high after 20mS
+                distance = 100  # then set 'distance' to 100
+                break  # and break out of the loop
+    elif (sensor == 'back'):
+        while not GPIO.input(echoBack):  # Wait for the start of the 'Echo' pulse
+            time1 = time.time()  # Get the time the 'Echo' pin goes high
+            if time1 - time2 > 0.02:  # If the 'Echo' pin doesn't go high after 20mS
+                distance = 100  # then set 'distance' to 100
+                break  # and break out of the loop
+    else:
+        raise Exception('invalid distance sensor')
+
+    if distance == 100:  # If a sensor error has occurred
+        return format(distance, '.2f')  # then exit with 100 (sensor fault)
+
+    if (sensor == 'front'):
+        while GPIO.input(echoFront):  # Otherwise, wait for the 'Echo' pin to go low
+            time2 = time.time()  # Get the time the 'Echo' pin goes low
+            if time2 - time1 > 0.02:  # If the 'Echo' pin doesn't go low after 20mS
+                distance = 100  # then ignore it and set 'distance' to 100
+                break  # and break out of the loop
+    elif (sensor == 'back'):
+        while GPIO.input(echoBack):  # Otherwise, wait for the 'Echo' pin to go low
+            time2 = time.time()  # Get the time the 'Echo' pin goes low
+            if time2 - time1 > 0.02:  # If the 'Echo' pin doesn't go low after 20mS
+                distance = 100  # then ignore it and set 'distance' to 100
+                break  # and break out of the loop
+    else:
+        raise Exception('invalid distance sensor')
+
+    if distance == 100:  # If a sensor error has occurred
+        return format(distance, '.2f')  # then exit with 100 (sensor fault)
+
+        # Sound travels at approximately 2.95uS per mm
+        # and the reflected sound has travelled twice
+        # the distance we need to measure (sound out,
+        # bounced off object, sound returned)
+
+    distance = (time2 - time1) / 0.00000295 / 2 / 10  # Convert the timer values into centimetres
+    return format(distance, '.2f')  # Exit with the distance in centimetres
 
 
+def getMotion(maxSample = 10):
+    logPhase('motion')
 
-def loop(writer):
+    if (GPIO.input(pirPin) == 0):
+        return False
+    else:
+        return True
+
+
+def getObstacle():
+    logPhase('obstacle')
+
+    if (GPIO.input(obstaclePin) == 1):
+        return False
+    else:
+        return True
+
+
+def getSensors(output = False):
+    # distFront = getDist('front')
+    # distBack = getDist('back')
+
+    motion = getMotion()
+
+    # obstacle = getObstacle()
+    logPhase('collectedData')
+
+    # data = {'disFront': distFront, 'disBack': distBack, 'pirVal': motion, 'obstacle': obstacle}
+
+    data = {'motion': motion}
+
+    writer.writerow(data)
+    logPhase('wroteData')
+    if (output):
+        # print("{: >10} {: >10} {: >10} {: >10}".format(*[distFront, distBack, motion, obstacle]))
+        print("Motion:", motion)
+
+    return (data)
+
+
+def loop():
+    logPhase('loopStart')
     while True:
-        disFront = distance('front')
-        disBack = distance('back')
-        pirVal = GPIO.input(pirPin)
-        obstacle = GPIO.input(obstaclePin)
-        
-        phase = 'collectedData'
-        printPhase(phase)
+        getSensors(output = True)
+        time.sleep(.3)
 
-        data = {'disFront': disFront, 'disBack': disBack, 'pirVal': pirVal, 'obstacle': obstacle}
-        
-        writer.writerow(data)
-        phase = 'writingData'
-        printPhase(phase)
-
-        time.sleep(.5)
 
 def destroy():
-    phase='destroy'
-    printPhase(phase)
+    outLog.close()
     GPIO.cleanup()  # Release resource
 
+    logPhase('destroy')
+
+
+setup()
 
 if __name__ == '__main__':  # Program start from here
-    setup()
+    logPhase('start')
 
     try:
-        with open(outLog, 'a') as log:
-            phase = 'loopStart'
-            printPhase(phase)
-            writer = csv.DictWriter(log, fieldnames = fields)
-            writer.writeheader()
-            loop(writer)
+        loop()
     except KeyboardInterrupt:  # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.
         destroy()
-
