@@ -12,34 +12,37 @@ echoFront = 24  # ultrasonic module echo pin = GPIO24 (BCM) / 18 (board)
 trigBack = 20
 echoBack = 16
 
-logName = 'outlog.csv'
+phaseLogName = 'phases.log'
+outLogName = 'outlog.csv'
 fields = ['disFront', 'disBack', 'pirVal', 'obstacle']
 
-outLog = open(logName, 'a+')
+phaseLog = open(phaseLogName, 'a+')
+outLog = open(outLogName, 'a+')
 writer = csv.DictWriter(outLog,fieldnames = fields)
 
 
-phase = ''
+currPhase = ['']
 phases = []
 
+motion=[0]*(100)
+motionIndex = 0
 
-def printPhase(phase,full = False):
-    if (full == True):
-        phases.append(phase)
+
+def logPhase(phase, full = False):
+    currPhase[0]=phase
+    phases.append(phase)
+
+    if(full == True):
         print(phases)
-    else:
-        phases.append(phase)
-        print(phase)
 
 def clearLog():
-    phase = 'clearLog'
-    printPhase(phase)
+    logPhase('clearLog')
+    phaseLog.truncate(0)
     outLog.truncate(0)
     writer.writeheader()
 
 def setup():
-    phase = 'setup'
-    printPhase(phase)
+    logPhase('setup')
 
     clearLog()
 
@@ -52,47 +55,8 @@ def setup():
     GPIO.setup(trigBack, GPIO.OUT)
     GPIO.setup(echoBack, GPIO.IN)
 
-
-
-def distanceBack():
-    GPIO.output(trigBack, 0)
-    time.sleep(0.000002)
-
-    GPIO.output(trigBack, 1)
-    time.sleep(0.00001)
-    GPIO.output(trigBack, 0)
-
-    while GPIO.input(echoBack) == 0:
-        a = 0
-    time1 = time.time()
-    while GPIO.input(echoBack) == 1:
-        a = 1
-    time2 = time.time()
-    during = time2 - time1
-    return during * 340 / 2 * 100
-
-
-def distanceFront():
-    GPIO.output(trigFront, 0)
-    time.sleep(0.000002)
-
-    GPIO.output(trigFront, 1)
-    time.sleep(0.00001)
-    GPIO.output(trigFront, 0)
-
-    while GPIO.input(echoFront) == 0:
-        a = 0
-    time1 = time.time()
-    while GPIO.input(echoFront) == 1:
-        a = 1
-    time2 = time.time()
-
-    during = time2 - time1
-    return during * 340 / 2 * 100
-
 def getBack():
-    phase = 'distBack'
-    printPhase(phase)
+    logPhase('distBack')
     global trigBack, echoBack  # Allow access to 'trig' and 'echo' constants
 
     if GPIO.input(echoBack):  # If the 'Echo' pin is already high
@@ -137,8 +101,7 @@ def getBack():
     return (distance)  # Exit with the distance in centimetres
 
 def getFront():
-    phase = 'distFront'
-    printPhase(phase)
+    logPhase('distFront')
     global trigFront, echoFront  # Allow access to 'trig' and 'echo' constants
 
     if GPIO.input(echoFront):  # If the 'Echo' pin is already high
@@ -183,16 +146,20 @@ def getFront():
     return (distance)  # Exit with the distance in centimetres
 
 def getMotion():
-    phase = 'motion'
-    printPhase(phase)
-    if (GPIO.input(pirPin) == 0):
+    global motion
+
+    logPhase('motion')
+
+    motion.pop()
+    motion = [GPIO.input(pirPin)] + motion
+
+    if (motion.count(0)>50):
         return False
     else:
         return True
 
 def getObstacle():
-    phase = 'obstacle'
-    printPhase(phase)
+    logPhase('obstacle')
     if (GPIO.input(obstaclePin) == 1):
         return False
     else:
@@ -203,22 +170,19 @@ def MAP(x, in_min, in_max, out_min, out_max):
 
 
 def loop():
-    phase = 'loopStart'
-    printPhase(phase)
+    logPhase('loopStart')
     while True:
         distFront = getFront()
         distBack = getBack()
         pirVal = getMotion()
         obstacle = getObstacle()
-        phase = 'collectedData'
-        printPhase(phase)
+        logPhase('collectedData')
 
         data = {'disFront': distFront, 'disBack': distBack, 'pirVal': pirVal, 'obstacle': obstacle}
 
         writer.writerow(data)
 
-        phase = 'wroteData'
-        printPhase(phase)
+        logPhase('wroteData')
 
         print(data)
 
@@ -227,13 +191,11 @@ def destroy():
     outLog.close()
     GPIO.cleanup()  # Release resource
 
-    phase = 'destroy'
-    printPhase(phase,full = True)
+    logPhase('destroy')
 
 
 if __name__ == '__main__':  # Program start from here
-    phase = 'start'
-    printPhase(phase)
+    logPhase('start')
     setup()
     try:
         loop()
