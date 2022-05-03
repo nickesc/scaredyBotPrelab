@@ -13,8 +13,15 @@ class ScaredyBot():
     def __init__(self, tty):
         self.botPort = tty  # where is your serial port?
         self.bot = Create2(self.botPort)
-        self.state = {'bot': self.bot.get_sensors(), 'pi': piSensors}
+        self.state = {'bot': self.bot.get_sensors(), 'pi': piSensors.getSensors()}
         self.setState()
+
+    def start(self):
+        self.bot.start()
+        self.bot.safe()
+
+    def stop(self):
+        self.bot.drive_stop()
 
     # driving the bot - speed between 0 & 3; direction is 'forward' or 'back'
     def drive(self, speed = 1, dir = 'forward'):
@@ -34,7 +41,7 @@ class ScaredyBot():
 
     def setState(self):
         try:
-            self.state = {'bot': self.bot.get_sensors(), 'pi': piSensors}
+            self.state = {'bot': self.bot.get_sensors(), 'pi': piSensors.getSensors()}
             return True
         except:
             return False
@@ -49,10 +56,12 @@ class ScaredyBot():
 
 def loop():
     global scaredyBot
-    print(scaredyBot.getSensors())
-    time.sleep(.1)
-    scaredyBot.checkMotion()
-    time.sleep(.1)
+
+    while True:
+        print(scaredyBot.getSensors())
+        time.sleep(.1)
+        scaredyBot.checkMotion()
+        time.sleep(.1)
 
 def destroy():
     print("Quitting")
@@ -61,9 +70,8 @@ def destroy():
 if __name__ == '__main__':
 
     scaredyBot = ScaredyBot('/dev/ttyUSB0')
-
     try:
-        loop()
+        scaredyBot.start()
     except KeyboardInterrupt:  # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.
         destroy()
 
