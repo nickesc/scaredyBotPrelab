@@ -12,18 +12,37 @@ echoFront = 24  # ultrasonic module echo pin = GPIO24 (BCM) / 18 (board)
 trigBack = 20
 echoBack = 16
 
-outLog = 'outlog.csv'
+logName = 'outlog.csv'
 fields = ['disFront', 'disBack', 'pirVal', 'obstacle']
 
-def microsecondsToInches(microseconds):
-  return microseconds / 74 / 2
+outLog = open(logName, 'a+')
+writer = csv.DictWriter(outLog,fieldnames = fields)
 
 
-def microsecondsToCentimeters(microseconds):
-  return microseconds / 29 / 2
+phase = ''
+phases = []
 
+
+def printPhase(phase,full = False):
+    if (full == True):
+        phases.append(phase)
+        print(phases)
+    else:
+        phases.append(phase)
+        print(phase)
+
+def clearLog():
+    phase = 'clearLog'
+    printPhase(phase)
+    outLog.truncate(0)
+    writer.writeheader()
 
 def setup():
+    phase = 'setup'
+    printPhase(phase)
+
+    clearLog()
+
     GPIO.setmode(GPIO.BCM)  # Set the GPIO modes to BCM Numbering
 
     GPIO.setup(pirPin, GPIO.IN)
@@ -32,6 +51,7 @@ def setup():
     GPIO.setup(echoFront, GPIO.IN)
     GPIO.setup(trigBack, GPIO.OUT)
     GPIO.setup(echoBack, GPIO.IN)
+
 
 
 def distanceBack():
@@ -71,6 +91,8 @@ def distanceFront():
     return during * 340 / 2 * 100
 
 def getBack():
+    phase = 'distBack'
+    printPhase(phase)
     global trigBack, echoBack  # Allow access to 'trig' and 'echo' constants
 
     if GPIO.input(echoBack):  # If the 'Echo' pin is already high
@@ -115,6 +137,8 @@ def getBack():
     return (distance)  # Exit with the distance in centimetres
 
 def getFront():
+    phase = 'distFront'
+    printPhase(phase)
     global trigFront, echoFront  # Allow access to 'trig' and 'echo' constants
 
     if GPIO.input(echoFront):  # If the 'Echo' pin is already high
@@ -158,27 +182,58 @@ def getFront():
     distance = (time2 - time1) / 0.00000295 / 2 / 10  # Convert the timer values into centimetres
     return (distance)  # Exit with the distance in centimetres
 
+def getMotion():
+    phase = 'motion'
+    printPhase(phase)
+    if (GPIO.input(pirPin) == 0):
+        return False
+    else:
+        return True
+
+def getObstacle():
+    phase = 'obstacle'
+    printPhase(phase)
+    if (GPIO.input(obstaclePin) == 1):
+        return False
+    else:
+        return True
+
 def MAP(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 
 def loop():
+    phase = 'loopStart'
+    printPhase(phase)
     while True:
-        disFront = getFront()
-        disBack = getBack()
-        pirVal = GPIO.input(pirPin)
-        obstacle = GPIO.input(obstaclePin)
+        distFront = getFront()
+        distBack = getBack()
+        pirVal = getMotion()
+        obstacle = getObstacle()
+        phase = 'collectedData'
+        printPhase(phase)
 
-        data = {'disFront': disFront, 'disBack': disBack, 'pirVal': pirVal, 'obstacle': obstacle}
+        data = {'disFront': distFront, 'disBack': distBack, 'pirVal': pirVal, 'obstacle': obstacle}
+
+        writer.writerow(data)
+
+        phase = 'wroteData'
+        printPhase(phase)
 
         print(data)
 
 
 def destroy():
+    outLog.close()
     GPIO.cleanup()  # Release resource
+
+    phase = 'destroy'
+    printPhase(phase,full = True)
 
 
 if __name__ == '__main__':  # Program start from here
+    phase = 'start'
+    printPhase(phase)
     setup()
     try:
         loop()
