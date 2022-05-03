@@ -100,42 +100,89 @@ def getBack():
     distance = (time2 - time1) / 0.00000295 / 2 / 10  # Convert the timer values into centimetres
     return (distance)  # Exit with the distance in centimetres
 
-def getFront():
+def getFront(sensor):
     logPhase('distFront')
-    global trigFront, echoFront  # Allow access to 'trig' and 'echo' constants
+    global trigFront, echoFront, trigBack, echoBack  # Allow access to 'trig' and 'echo' constants
 
-    if GPIO.input(echoFront):  # If the 'Echo' pin is already high
-        return (100)  # then exit with 100 (sensor fault)
+
+
+    if (sensor == 'front'):
+        if GPIO.input(echoFront):  # If the 'Echo' pin is already high
+            return 100.000  # then exit with 100 (sensor fault)
+    elif (sensor == 'back'):
+        if GPIO.input(echoBack):  # If the 'Echo' pin is already high
+            return 100.000  # then exit with 100 (sensor fault)
+    else:
+        raise Exception('invalid distance sensor')
+
 
     distance = 0  # Set initial distance to zero
 
-    GPIO.output(trigFront, False)  # Ensure the 'Trig' pin is low for at
+    if (sensor == 'front'):
+        GPIO.output(trigFront, False)  # Ensure the 'Trig' pin is low for at
+    elif (sensor == 'back'):
+        GPIO.output(trigBack, False)  # Ensure the 'Trig' pin is low for at
+    else:
+        raise Exception('invalid distance sensor')
+
     time.sleep(0.05)  # least 50mS (recommended re-sample time)
 
-    GPIO.output(trigFront, True)  # Turn on the 'Trig' pin for 10uS (ish!)
+    if (sensor == 'front'):
+        GPIO.output(trigFront, True)  # Turn on the 'Trig' pin for 10uS (ish!)
+    elif (sensor == 'back'):
+        GPIO.output(trigBack, True)  # Turn on the 'Trig' pin for 10uS (ish!)
+    else:
+        raise Exception('invalid distance sensor')
+
     dummy_variable = 0  # No need to use the 'time' module here,
     dummy_variable = 0  # a couple of 'dummy' statements will do fine
 
-    GPIO.output(trigFront, False)  # Turn off the 'Trig' pin
+    if (sensor == 'front'):
+        GPIO.output(trigFront, False)  # Turn off the 'Trig' pin
+    elif (sensor == 'back'):
+        GPIO.output(trigBack, False)  # Turn off the 'Trig' pin
+    else:
+        raise Exception('invalid distance sensor')
+
     time1, time2 = time.time(), time.time()  # Set inital time values to current time
 
-    while not GPIO.input(echoFront):  # Wait for the start of the 'Echo' pulse
-        time1 = time.time()  # Get the time the 'Echo' pin goes high
-        if time1 - time2 > 0.02:  # If the 'Echo' pin doesn't go high after 20mS
-            distance = 100  # then set 'distance' to 100
-            break  # and break out of the loop
+    if (sensor == 'front'):
+        while not GPIO.input(echoFront):  # Wait for the start of the 'Echo' pulse
+            time1 = time.time()  # Get the time the 'Echo' pin goes high
+            if time1 - time2 > 0.02:  # If the 'Echo' pin doesn't go high after 20mS
+                distance = 100  # then set 'distance' to 100
+                break  # and break out of the loop
+    elif (sensor == 'back'):
+        while not GPIO.input(echoBack):  # Wait for the start of the 'Echo' pulse
+            time1 = time.time()  # Get the time the 'Echo' pin goes high
+            if time1 - time2 > 0.02:  # If the 'Echo' pin doesn't go high after 20mS
+                distance = 100  # then set 'distance' to 100
+                break  # and break out of the loop
+    else:
+        raise Exception('invalid distance sensor')
+
 
     if distance == 100:  # If a sensor error has occurred
-        return (distance)  # then exit with 100 (sensor fault)
+        return format(distance,'.2f')  # then exit with 100 (sensor fault)
 
-    while GPIO.input(echoFront):  # Otherwise, wait for the 'Echo' pin to go low
-        time2 = time.time()  # Get the time the 'Echo' pin goes low
-        if time2 - time1 > 0.02:  # If the 'Echo' pin doesn't go low after 20mS
-            distance = 100  # then ignore it and set 'distance' to 100
-            break  # and break out of the loop
+    if (sensor == 'front'):
+        while GPIO.input(echoFront):  # Otherwise, wait for the 'Echo' pin to go low
+            time2 = time.time()  # Get the time the 'Echo' pin goes low
+            if time2 - time1 > 0.02:  # If the 'Echo' pin doesn't go low after 20mS
+                distance = 100  # then ignore it and set 'distance' to 100
+                break  # and break out of the loop
+    elif (sensor == 'back'):
+        while GPIO.input(echoBack):  # Otherwise, wait for the 'Echo' pin to go low
+            time2 = time.time()  # Get the time the 'Echo' pin goes low
+            if time2 - time1 > 0.02:  # If the 'Echo' pin doesn't go low after 20mS
+                distance = 100  # then ignore it and set 'distance' to 100
+                break  # and break out of the loop
+    else:
+        raise Exception('invalid distance sensor')
+
 
     if distance == 100:  # If a sensor error has occurred
-        return (distance)  # then exit with 100 (sensor fault)
+        return format(distance,'.2f')  # then exit with 100 (sensor fault)
 
         # Sound travels at approximately 2.95uS per mm
         # and the reflected sound has travelled twice
@@ -143,7 +190,7 @@ def getFront():
         # bounced off object, sound returned)
 
     distance = (time2 - time1) / 0.00000295 / 2 / 10  # Convert the timer values into centimetres
-    return (distance)  # Exit with the distance in centimetres
+    return format(distance,'.2f')  # Exit with the distance in centimetres
 
 def getMotion(sample = 'small'):
     global motion
@@ -176,9 +223,10 @@ def MAP(x, in_min, in_max, out_min, out_max):
 
 def loop():
     logPhase('loopStart')
+    print("{: >10} {: >10} {: >10} {: >10} {:>10}".format(*["distFront", "distBack", "motionRaw", "motionAverage", "obstacle"]))
     while True:
-        distFront = getFront()
-        distBack = getBack()
+        distFront = getFront('front')
+        distBack = getFront('back')
 
         mot = getMotion()
 
@@ -194,7 +242,9 @@ def loop():
 
         logPhase('wroteData')
 
-        print(data, motionAverage)
+        print("{: >10} {: >10} {: >10} {: >10} {:>10}".format(*[distFront,distBack,motionRaw,motionAverage,obstacle]))
+
+        #print(data, motionAverage)
 
 
 def destroy():
