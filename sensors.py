@@ -12,12 +12,12 @@ echoPin = 24  # ultrasonic module echo pin = GPIO24 (BCM) / 18 (board)
 # trigBack = 20
 # echoBack = 16
 
-phaseLogName = 'phases.log'
+
 outLogName = 'outlog.csv'
 # fields = ['disFront', 'disBack', 'pirVal', 'obstacle']
 fields = ['motion']
 
-phaseLog = open(phaseLogName, 'a+')
+
 outLog = open(outLogName, 'a+')
 writer = csv.DictWriter(outLog, fieldnames = fields)
 
@@ -35,7 +35,6 @@ def logPhase(phase, full = False):
 
 def clearLog():
     logPhase('clearLog')
-    phaseLog.truncate(0)
     outLog.truncate(0)
     writer.writeheader()
 
