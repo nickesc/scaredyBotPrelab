@@ -1,14 +1,14 @@
 from pycreate2 import Create2
-import pyfirmata
+#import pyfirmata
 import serial
 import time
 
-botPort = "/dev/tty.usbserial-DN026A6A"  # where is your serial port?
-boardPort = "/dev/tty.usbmodem1101"
+botPort = "/dev/ttyUSB0"  # where is your serial port?
+#boardPort = "/dev/tty.usbmodem1101"
 
-#bot = Create2(botPort)
+bot = Create2(botPort)
 
-firmataBoard = pyfirmata.Arduino(boardPort)
+#firmataBoard = pyfirmata.Arduino(boardPort)
 #serialBoard = serial.Serial(boardPort, 9600)
 
 def serialTest(board):
@@ -35,19 +35,19 @@ def botTest(bot):
     sensors = bot.get_sensors()  # returns all data
     print(sensors.light_bumper_left)
 
-def firmataTest(board):
-    it = pyfirmata.util.Iterator(board)
-    it.start()
-    analog_input = board.get_pin('a:0:i')
+#def firmataTest(board):
+#    it = pyfirmata.util.Iterator(board)
+#    it.start()
+#    analog_input = board.get_pin('a:0:i')
 
-    while True:
-        analog_value = analog_input.read()
-        print(analog_value)
-        time.sleep(0.1)
+#    while True:
+#        analog_value = analog_input.read()
+#        print(analog_value)
+#        time.sleep(0.1)
 
 
 
 if __name__ == '__main__':
-    #botTest(bot)
-    firmataTest(firmataBoard)
+    botTest(bot)
+    #firmataTest(firmataBoard)
     #serialTest(serialBoard)

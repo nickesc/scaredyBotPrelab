@@ -185,7 +185,7 @@ def getSensors(output = False):
 def loop():
     logPhase('loopStart')
     while True:
-        getSensors()
+        getSensors(output=True)
         time.sleep(.3)
 
 

@@ -5,6 +5,7 @@ from pycreate2 import Create2
 import time
 import RPi.GPIO as GPIO
 
+port = '/dev/ttyUSB0'
 
 class ScaredyBot():
 
@@ -60,7 +61,7 @@ def loop():
     while True:
         print(scaredyBot.getSensors())
         time.sleep(.1)
-        scaredyBot.checkMotion()
+        #scaredyBot.checkMotion()
         time.sleep(.1)
 
 def destroy():
@@ -71,7 +72,10 @@ if __name__ == '__main__':
 
     scaredyBot = ScaredyBot('/dev/ttyUSB0')
     try:
-        scaredyBot.start()
+        bot = Create2(port)
+        print(bot.get_sensors())
+        #scaredyBot.start()
+        #loop()
     except KeyboardInterrupt:  # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.
         destroy()
 
