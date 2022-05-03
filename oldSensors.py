@@ -6,15 +6,16 @@ import csv
 
 obstaclePin = 17  # obstacle module pin = GPIO17 (BCM) / 11 (board)
 pirPin = 27  # PIR motion pin = GPIO27 (BCM) / 13 (board)
-trigFront = 23  # ultrasonic module trig pin = GPIO23 (BCM) / 16 (board)
-echoFront = 24  # ultrasonic module echo pin = GPIO24 (BCM) / 18 (board)
+trigPin = 23  # ultrasonic module trig pin = GPIO23 (BCM) / 16 (board)
+echoPin = 24  # ultrasonic module echo pin = GPIO24 (BCM) / 18 (board)
 
-trigBack = 20
-echoBack = 16
+#trigBack = 20
+#echoBack = 16
 
 phaseLogName = 'phases.log'
 outLogName = 'outlog.csv'
-fields = ['disFront', 'disBack', 'pirVal', 'obstacle']
+#fields = ['disFront', 'disBack', 'pirVal', 'obstacle']
+fields = ['motion']
 
 phaseLog = open(phaseLogName, 'a+')
 outLog = open(outLogName, 'a+')
@@ -44,11 +45,11 @@ def setup():
     GPIO.setmode(GPIO.BCM)  # Set the GPIO modes to BCM Numbering
 
     GPIO.setup(pirPin, GPIO.IN)
-    GPIO.setup(obstaclePin, GPIO.IN, pull_up_down = GPIO.PUD_UP)
-    GPIO.setup(trigFront, GPIO.OUT)
-    GPIO.setup(echoFront, GPIO.IN)
-    GPIO.setup(trigBack, GPIO.OUT)
-    GPIO.setup(echoBack, GPIO.IN)
+    #GPIO.setup(obstaclePin, GPIO.IN, pull_up_down = GPIO.PUD_UP)
+    #GPIO.setup(trigFront, GPIO.OUT)
+    #GPIO.setup(echoFront, GPIO.IN)
+    #GPIO.setup(trigBack, GPIO.OUT)
+    #GPIO.setup(echoBack, GPIO.IN)
 
 def getDist(sensor):
     logPhase('distFront')
@@ -158,26 +159,26 @@ def getObstacle():
     else:
         return True
 
-def MAP(x, in_min, in_max, out_min, out_max):
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
-
 def getSensors(output = False):
-    distFront = getDist('front')
-    distBack = getDist('back')
+    #distFront = getDist('front')
+    #distBack = getDist('back')
 
     motion = getMotion()
 
-    obstacle = getObstacle()
+    #obstacle = getObstacle()
     logPhase('collectedData')
 
-    data = {'disFront': distFront, 'disBack': distBack, 'pirVal': motion, 'obstacle': obstacle}
+    # data = {'disFront': distFront, 'disBack': distBack, 'pirVal': motion, 'obstacle': obstacle}
+
+    data = {'motion':motion}
 
     logPhase('wroteData')
     writer.writerow(data)
 
     if(output):
         logPhase('wroteData')
-        print("{: >10} {: >10} {: >10} {: >10}".format(*[distFront, distBack, motion, obstacle]))
+        #print("{: >10} {: >10} {: >10} {: >10}".format(*[distFront, distBack, motion, obstacle]))
+        print("Motion:", motion)
 
     return(data)
 
