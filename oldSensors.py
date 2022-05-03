@@ -3,24 +3,42 @@
 
 import RPi.GPIO as GPIO
 import time
+import RPi.GPIO as GPIO
+import time
+import csv
 
 obstaclePin = 17 # obstacle module pin = GPIO17 (BCM) / 11 (board)
 pirPin = 27  # PIR motion pin = GPIO27 (BCM) / 13 (board)
-trigPin = 23 # ultrasonic module trig pin = GPIO23 (BCM) / 16 (board)
-echoPin = 24 # ultrasonic module echo pin = GPIO24 (BCM) / 18 (board)
+trigFront = 23 # ultrasonic module trig pin = GPIO23 (BCM) / 16 (board)
+echoFront = 24 # ultrasonic module echo pin = GPIO24 (BCM) / 18 (board)
 
+trigBack = 20
+echoBack = 16
 
+outLog = 'outlog.csv'
+fields = ['disFront', 'disBack', 'pirVal', 'obstacle']
 
 def setup():
     GPIO.setmode(GPIO.BCM)  # Set the GPIO modes to BCM Numbering
 
     GPIO.setup(pirPin, GPIO.IN)
     GPIO.setup(obstaclePin, GPIO.IN, pull_up_down = GPIO.PUD_UP)
-    GPIO.setup(trigPin, GPIO.OUT)
-    GPIO.setup(echoPin, GPIO.IN)
+    GPIO.setup(trigFront, GPIO.OUT)
+    GPIO.setup(echoFront, GPIO.IN)
 
 
-def distance():
+def distance(sensor):
+    if (sensor == 'front'):
+        trigPin = trigFront
+        echoPin = echoFront
+
+    elif (sensor == 'back'):
+        trigPin = trigBack
+        echoPin = echoFront
+
+    else:
+        raise Exception("invalid distance sensor selection")
+
     GPIO.output(trigPin, 0)
     time.sleep(0.000002)
 
@@ -45,16 +63,14 @@ def MAP(x, in_min, in_max, out_min, out_max):
 
 def loop():
     while True:
+        disFront = distance('front')
+        disBack = distance('back')
+        pirVal = GPIO.input(pirPin)
+        obstacle = GPIO.input(obstaclePin)
 
-        dis = distance()
-        print('Distance: %.2f' % dis)
+        data = {'disFront': disFront, 'disBack': disBack, 'pirVal': pirVal, 'obstacle': obstacle}
 
-        pir_val = GPIO.input(pirPin)
-        print("Motion:",pir_val)
-
-        print("Barrier:", GPIO.input(obstaclePin))
-        time.sleep(.02)
-
+        print(data)
 
 
 def destroy():
