@@ -25,6 +25,8 @@ def setup():
     GPIO.setup(obstaclePin, GPIO.IN, pull_up_down = GPIO.PUD_UP)
     GPIO.setup(trigFront, GPIO.OUT)
     GPIO.setup(echoFront, GPIO.IN)
+    GPIO.setup(trigBack, GPIO.OUT)
+    GPIO.setup(echoBack, GPIO.IN)
 
 
 def distance(sensor):
