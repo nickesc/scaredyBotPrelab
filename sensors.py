@@ -15,10 +15,27 @@ echoBack = 16
 outLog = 'outlog.csv'
 fields = ['disFront', 'disBack', 'pirVal', 'obstacle']
 
+phase = 'start'
+phases = []
+
+
+def printPhase(full = False):
+    if (full == True):
+        print(phases)
+    else:
+        phases.append(phase)
+        print(phase)
+
+printPhase()
+
 with open(outLog, 'w') as log:
+    phase = 'clear log'
+    printPhase()
     log.write("")
 
 def setup():
+    phase = 'setup'
+    printPhase()
     GPIO.setmode(GPIO.BCM)  # Set the GPIO modes to BCM Numbering
 
     GPIO.setup(pirPin, GPIO.IN)
@@ -30,10 +47,14 @@ def setup():
 
 
 def distance(sensor):
+    phase = sensor + "Start"
+    printPhase()
 
     if (sensor == 'front'):
+        
         trig = trigFront
         echo = echoFront
+        
     else:
         trig = trigBack
         echo = echoBack
@@ -52,6 +73,9 @@ def distance(sensor):
         a = 1
     time2 = time.time()
 
+    phase = sensor + "End"
+    printPhase()
+
     during = time2 - time1
     return during * 340 / 2 * 100
 
@@ -66,14 +90,21 @@ def loop(writer):
         disBack = distance('back')
         pirVal = GPIO.input(pirPin)
         obstacle = GPIO.input(obstaclePin)
+        
+        phase = 'collectedData'
+        printPhase()
 
         data = {'disFront': disFront, 'disBack': disBack, 'pirVal': pirVal, 'obstacle': obstacle}
+        
         writer.writerow(data)
+        phase = 'writingData'
+        printPhase()
 
         time.sleep(.5)
 
 def destroy():
-
+    phase='destroy'
+    printPhase()
     GPIO.cleanup()  # Release resource
 
 
@@ -82,6 +113,8 @@ if __name__ == '__main__':  # Program start from here
 
     try:
         with open(outLog, 'a') as log:
+            phase = 'loopStart'
+            printPhase()
             writer = csv.DictWriter(log, fieldnames = fields)
             writer.writeheader()
             loop(writer)
