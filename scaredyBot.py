@@ -29,7 +29,9 @@ class ScaredyBot():
     def drive(self, speed = 1, dir = 'forward'):
         return
 
-    def driveUntilYouHitAWall(self,speed, direction = 'forward'):
+    def driveUntilYouHitAWall(self, speed, direction = 'forward'):
+        speed=speed*self.baseSpeed
+
         if direction=="back":
             speed = speed*-1
 
@@ -75,7 +77,7 @@ def loop():
     while True:
         print(scaredyBot.getSensors())
         time.sleep(.1)
-        #scaredyBot.checkMotion()
+        scaredyBot.checkMotion()
         time.sleep(.1)
 
 def destroy():
@@ -86,8 +88,11 @@ if __name__ == '__main__':
 
     scaredyBot = ScaredyBot('/dev/ttyUSB0')
     try:
-        bot = Create2(port)
-        print(bot.get_sensors())
+        print(scaredyBot.getSensors())
+        time.sleep(.1)
+        scaredyBot.driveUntilYouHitAWall(1)
+        #bot = Create2(port)
+        #print(bot.get_sensors())
         #scaredyBot.start()
         #loop()
     except KeyboardInterrupt:  # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.
