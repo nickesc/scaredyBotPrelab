@@ -192,20 +192,15 @@ def getFront(sensor):
     distance = (time2 - time1) / 0.00000295 / 2 / 10  # Convert the timer values into centimetres
     return format(distance,'.2f')  # Exit with the distance in centimetres
 
-def getMotion(sample = 'small'):
+def getMotion(maxSample = 10):
     global motion
-
-    length = len(motion)
-
-    if (sample != 'small'):
-        length = 100
 
     logPhase('motion')
 
     motion.pop()
     motion = [GPIO.input(pirPin)] + motion
 
-    if (motion[:length-1].count(0)> length/2):
+    if (motion[:maxSample-1].count(0) > maxSample/2):
         return [False, GPIO.input(pirPin)]
     else:
         return [True, GPIO.input(pirPin)]
