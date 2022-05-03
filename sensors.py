@@ -79,8 +79,8 @@ def getGyro():
     gyro["accel_yout_scaled"] = gyro["accel_yout"] / 16384.0
     gyro["accel_zout_scaled"] = gyro["accel_zout"] / 16384.0
 
-    gyro["x_rotation"] = get_x_rotation(["accel_xout_scaled"], ["accel_yout_scaled"], ["accel_zout_scaled"])
-    gyro["y_rotation"] = get_y_rotation(["accel_xout_scaled"], ["accel_yout_scaled"], ["accel_zout_scaled"])
+    gyro["x_rotation"] = get_x_rotation(gyro["accel_xout_scaled"], gyro["accel_yout_scaled"], gyro["accel_zout_scaled"])
+    gyro["y_rotation"] = get_y_rotation(gyro["accel_xout_scaled"], gyro["accel_yout_scaled"], gyro["accel_zout_scaled"])
 
 def logPhase(phase, full = False):
     currPhase[0] = phase
