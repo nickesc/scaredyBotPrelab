@@ -48,14 +48,14 @@ def setup():
 
 def distance(sensor):
     phase = sensor + "Start"
-    printPhase(phase)
 
     if (sensor == 'front'):
-        
+        printPhase(phase)
         trig = trigFront
         echo = echoFront
         
     else:
+        printPhase(phase)
         trig = trigBack
         echo = echoBack
 
