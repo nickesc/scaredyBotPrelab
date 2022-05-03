@@ -31,29 +31,37 @@ def setup():
 
 def distance(sensor):
     if (sensor == 'front'):
-        trigPin = trigFront
-        echoPin = echoFront
+        GPIO.output(trigFront, 0)
+        time.sleep(0.000002)
+
+        GPIO.output(trigFront, 1)
+        time.sleep(0.00001)
+        GPIO.output(trigFront, 0)
+
+        while GPIO.input(echoFront) == 0:
+            a = 0
+        time1 = time.time()
+        while GPIO.input(echoFront) == 1:
+            a = 1
+        time2 = time.time()
 
     elif (sensor == 'back'):
-        trigPin = trigBack
-        echoPin = echoFront
+        GPIO.output(trigBack, 0)
+        time.sleep(0.000002)
+
+        GPIO.output(trigBack, 1)
+        time.sleep(0.00001)
+        GPIO.output(trigBack, 0)
+
+        while GPIO.input(echoBack) == 0:
+            a = 0
+        time1 = time.time()
+        while GPIO.input(echoBack) == 1:
+            a = 1
+        time2 = time.time()
 
     else:
         raise Exception("invalid distance sensor selection")
-
-    GPIO.output(trigPin, 0)
-    time.sleep(0.000002)
-
-    GPIO.output(trigPin, 1)
-    time.sleep(0.00001)
-    GPIO.output(trigPin, 0)
-
-    while GPIO.input(echoPin) == 0:
-        a = 0
-    time1 = time.time()
-    while GPIO.input(echoPin) == 1:
-        a = 1
-    time2 = time.time()
 
     during = time2 - time1
     return during * 340 / 2 * 100
