@@ -19,23 +19,23 @@ phase = 'start'
 phases = []
 
 
-def printPhase(full = False):
+def printPhase(phase,full = False):
     if (full == True):
         print(phases)
     else:
         phases.append(phase)
         print(phase)
 
-printPhase()
+printPhase(phase)
 
 with open(outLog, 'w') as log:
     phase = 'clear log'
-    printPhase()
+    printPhase(phase)
     log.write("")
 
 def setup():
     phase = 'setup'
-    printPhase()
+    printPhase(phase)
     GPIO.setmode(GPIO.BCM)  # Set the GPIO modes to BCM Numbering
 
     GPIO.setup(pirPin, GPIO.IN)
@@ -48,7 +48,7 @@ def setup():
 
 def distance(sensor):
     phase = sensor + "Start"
-    printPhase()
+    printPhase(phase)
 
     if (sensor == 'front'):
         
@@ -74,7 +74,7 @@ def distance(sensor):
     time2 = time.time()
 
     phase = sensor + "End"
-    printPhase()
+    printPhase(phase)
 
     during = time2 - time1
     return during * 340 / 2 * 100
@@ -92,19 +92,19 @@ def loop(writer):
         obstacle = GPIO.input(obstaclePin)
         
         phase = 'collectedData'
-        printPhase()
+        printPhase(phase)
 
         data = {'disFront': disFront, 'disBack': disBack, 'pirVal': pirVal, 'obstacle': obstacle}
         
         writer.writerow(data)
         phase = 'writingData'
-        printPhase()
+        printPhase(phase)
 
         time.sleep(.5)
 
 def destroy():
     phase='destroy'
-    printPhase()
+    printPhase(phase)
     GPIO.cleanup()  # Release resource
 
 
@@ -114,7 +114,7 @@ if __name__ == '__main__':  # Program start from here
     try:
         with open(outLog, 'a') as log:
             phase = 'loopStart'
-            printPhase()
+            printPhase(phase)
             writer = csv.DictWriter(log, fieldnames = fields)
             writer.writeheader()
             loop(writer)
