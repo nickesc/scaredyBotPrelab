@@ -15,8 +15,7 @@ echoBack = 16
 outLog = 'outlog.csv'
 fields = ['disFront', 'disBack', 'pirVal', 'obstacle']
 
-with open(outLog, 'w') as log:
-    log.write("")
+
 
 def setup():
     GPIO.setmode(GPIO.BCM)  # Set the GPIO modes to BCM Numbering
@@ -63,12 +62,13 @@ def MAP(x, in_min, in_max, out_min, out_max):
 def loop(writer):
     while True:
         disFront = distance('front')
-        disBack = distance('front')
+        disBack = distance('back')
         pirVal = GPIO.input(pirPin)
         obstacle = GPIO.input(obstaclePin)
 
         data = {'disFront': disFront, 'disBack': disBack, 'pirVal': pirVal, 'obstacle': obstacle}
-        writer.writerow(data)
+        print(data)
+        #writer.writerow(data)
 
         time.sleep(.5)
 
@@ -87,10 +87,13 @@ if __name__ == '__main__':  # Program start from here
     setup()
 
     try:
-        with open(outLog, 'a') as log:
-            writer = csv.DictWriter(log, fieldnames = fields)
-            writer.writeheader()
-            loop(writer)
+
+        writer = ""
+        loop(writer)
+        #with open(outLog, 'a') as log:
+            #writer = csv.DictWriter(log, fieldnames = fields)
+            #writer.writeheader()
+            #loop(writer)
     except KeyboardInterrupt:  # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.
         destroy()
 
