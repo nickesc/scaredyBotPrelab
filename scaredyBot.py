@@ -5,6 +5,7 @@ from pycreate2 import Create2
 import time
 import RPi.GPIO as GPIO
 
+
 port = '/dev/ttyUSB0'
 
 class ScaredyBot():
@@ -14,12 +15,12 @@ class ScaredyBot():
     def __init__(self, tty):
         self.botPort = tty  # where is your serial port?
         self.bot = Create2(self.botPort)
-        self.state = {'bot': self.bot.get_sensors(), 'pi': piSensors.getSensors()}
-        self.setState()
 
-    def start(self):
         self.bot.start()
         self.bot.safe()
+
+        self.state = {'bot': self.bot.get_sensors(), 'pi': piSensors.getSensors()}
+        self.setState()
 
     def stop(self):
         self.bot.drive_stop()
@@ -27,6 +28,19 @@ class ScaredyBot():
     # driving the bot - speed between 0 & 3; direction is 'forward' or 'back'
     def drive(self, speed = 1, dir = 'forward'):
         return
+
+    def driveUntilYouHitAWall(self,speed, direction = 'forward'):
+        if direction=="back":
+            speed = speed*-1
+
+        self.bot.drive_direct(speed, speed)
+        noWall = True
+        while noWall:
+            sensors = self.bot.get_sensors()
+            bump = sensors.light_bumper
+            if bump.front_left or bump.front_right:
+                self.bot.drive_stop()
+                noWall = False
 
     def driveOne(self, speed = 1, dir = 'forward'):
         return
@@ -52,7 +66,7 @@ class ScaredyBot():
         return self.state
 
     def checkMotion(self):
-        return self.getSensors()['pi']['motion']
+        return piSensors.getMotion()
 
 
 def loop():

@@ -3,6 +3,8 @@
 import RPi.GPIO as GPIO
 import time
 import csv
+import smbus
+import math
 
 obstaclePin = 17  # obstacle module pin = GPIO17 (BCM) / 11 (board)
 pirPin = 27  # PIR motion pin = GPIO27 (BCM) / 13 (board)
@@ -15,7 +17,7 @@ echoPin = 24  # ultrasonic module echo pin = GPIO24 (BCM) / 18 (board)
 
 outLogName = 'outlog.csv'
 # fields = ['disFront', 'disBack', 'pirVal', 'obstacle']
-fields = ['motion']
+fields = ['motion', 'gyro']
 
 
 outLog = open(outLogName, 'a+')
@@ -24,6 +26,61 @@ writer = csv.DictWriter(outLog, fieldnames = fields)
 currPhase = ['']
 phases = []
 
+power_mgmt_1 = 0x6b
+power_mgmt_2 = 0x6c
+
+bus = smbus.SMBus(1) # or bus = smbus.SMBus(1) for Revision 2 boards
+address = 0x68       # This is the address value read via the i2cdetect command
+
+def read_byte(adr):
+    return bus.read_byte_data(address, adr)
+
+def read_word(adr):
+    high = bus.read_byte_data(address, adr)
+    low = bus.read_byte_data(address, adr+1)
+    val = (high << 8) + low
+    return val
+
+def read_word_2c(adr):
+    val = read_word(adr)
+    if (val >= 0x8000):
+        return -((65535 - val) + 1)
+    else:
+        return val
+
+def dist(a,b):
+    return math.sqrt((a*a)+(b*b))
+
+def get_y_rotation(x,y,z):
+    radians = math.atan2(x, dist(y,z))
+    return -math.degrees(radians)
+
+def get_x_rotation(x,y,z):
+    radians = math.atan2(y, dist(x,z))
+    return math.degrees(radians)
+
+def getGyro():
+
+    gyro = {}
+
+    gyro["gyro_xout"] = read_word_2c(0x43)
+    gyro["gyro_yout"] = read_word_2c(0x45)
+    gyro["gyro_zout"] = read_word_2c(0x47)
+
+    gyro["gyro_xout_scaled"] = gyro["gyro_xout"] / 131
+    gyro["gyro_yout_scaled"] = gyro["gyro_yout"] / 131
+    gyro["gyro_zout_scaled"] = gyro["gyro_zout"] / 131
+
+    gyro["accel_xout"] = read_word_2c(0x3b)
+    gyro["accel_yout"] = read_word_2c(0x3d)
+    gyro["accel_zout"] = read_word_2c(0x3f)
+
+    gyro["accel_xout_scaled"] = gyro["accel_xout"] / 16384.0
+    gyro["accel_yout_scaled"] = gyro["accel_yout"] / 16384.0
+    gyro["accel_zout_scaled"] = gyro["accel_zout"] / 16384.0
+
+    gyro["x_rotation"] = get_x_rotation(["accel_xout_scaled"], ["accel_yout_scaled"], ["accel_zout_scaled"])
+    gyro["y_rotation"] = get_y_rotation(["accel_xout_scaled"], ["accel_yout_scaled"], ["accel_zout_scaled"])
 
 def logPhase(phase, full = False):
     currPhase[0] = phase
@@ -47,6 +104,9 @@ def setup():
     GPIO.setmode(GPIO.BCM)  # Set the GPIO modes to BCM Numbering
 
     GPIO.setup(pirPin, GPIO.IN)
+
+    # Now wake the 6050 up as it starts in sleep mode
+    bus.write_byte_data(address, power_mgmt_1, 0)
     # GPIO.setup(obstaclePin, GPIO.IN, pull_up_down = GPIO.PUD_UP)
     # GPIO.setup(trigFront, GPIO.OUT)
     # GPIO.setup(echoFront, GPIO.IN)
@@ -166,18 +226,21 @@ def getSensors(output = False):
 
     motion = getMotion()
 
+    gyro = getGyro()
+
     # obstacle = getObstacle()
     logPhase('collectedData')
 
     # data = {'disFront': distFront, 'disBack': distBack, 'pirVal': motion, 'obstacle': obstacle}
 
-    data = {'motion': motion}
+    data = {'motion': motion, 'gyro':gyro}
 
     writer.writerow(data)
     logPhase('wroteData')
     if (output):
         # print("{: >10} {: >10} {: >10} {: >10}".format(*[distFront, distBack, motion, obstacle]))
         print("Motion:", motion)
+        print("Gyro:", gyro)
 
     return (data)
 
