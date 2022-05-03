@@ -145,18 +145,23 @@ def getFront():
     distance = (time2 - time1) / 0.00000295 / 2 / 10  # Convert the timer values into centimetres
     return (distance)  # Exit with the distance in centimetres
 
-def getMotion():
+def getMotion(sample = 'small'):
     global motion
+
+    length = len(motion)
+
+    if (sample != 'small'):
+        length = 100
 
     logPhase('motion')
 
     motion.pop()
     motion = [GPIO.input(pirPin)] + motion
 
-    if (motion.count(0)>50):
-        return False
+    if (motion[:length-1].count(0)> length/2):
+        return [False, GPIO.input(pirPin)]
     else:
-        return True
+        return [True, GPIO.input(pirPin)]
 
 def getObstacle():
     logPhase('obstacle')
@@ -174,17 +179,22 @@ def loop():
     while True:
         distFront = getFront()
         distBack = getBack()
-        pirVal = getMotion()
+
+        mot = getMotion()
+
+        motionAverage = mot[0]
+        motionRaw = mot[1]
+
         obstacle = getObstacle()
         logPhase('collectedData')
 
-        data = {'disFront': distFront, 'disBack': distBack, 'pirVal': pirVal, 'obstacle': obstacle}
+        data = {'disFront': distFront, 'disBack': distBack, 'pirVal': motionRaw, 'obstacle': obstacle}
 
         writer.writerow(data)
 
         logPhase('wroteData')
 
-        print(data)
+        print(data, motionAverage)
 
 
 def destroy():
