@@ -58,7 +58,9 @@ class ScaredyBot():
 
     def setState(self):
         try:
-            self.state = {'bot': self.bot.get_sensors(), 'pi': piSensors.getSensors()}
+            #self.state = {'bot': self.bot.get_sensors(), 'pi': piSensors.getSensors()}
+            self.state = self.bot.get_sensors()
+            self.state["motion"] = piSensors.getSensors()
             return True
         except:
             return False

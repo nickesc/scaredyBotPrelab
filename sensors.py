@@ -17,8 +17,8 @@ echoPin = 24  # ultrasonic module echo pin = GPIO24 (BCM) / 18 (board)
 
 outLogName = 'outlog.csv'
 # fields = ['disFront', 'disBack', 'pirVal', 'obstacle']
-fields = ['motion', 'gyro']
-
+# fields = ['motion', 'gyro']
+fields = ['motion']
 
 outLog = open(outLogName, 'a+')
 writer = csv.DictWriter(outLog, fieldnames = fields)
@@ -106,7 +106,7 @@ def setup():
     GPIO.setup(pirPin, GPIO.IN)
 
     # Now wake the 6050 up as it starts in sleep mode
-    bus.write_byte_data(address, power_mgmt_1, 0)
+    # bus.write_byte_data(address, power_mgmt_1, 0) #GYRO
     # GPIO.setup(obstaclePin, GPIO.IN, pull_up_down = GPIO.PUD_UP)
     # GPIO.setup(trigFront, GPIO.OUT)
     # GPIO.setup(echoFront, GPIO.IN)
@@ -223,24 +223,23 @@ def getObstacle():
 def getSensors(output = False):
     # distFront = getDist('front')
     # distBack = getDist('back')
+    # gyro = getGyro()
+    # obstacle = getObstacle()
 
     motion = getMotion()
-
-    gyro = getGyro()
-
-    # obstacle = getObstacle()
     logPhase('collectedData')
 
     # data = {'disFront': distFront, 'disBack': distBack, 'pirVal': motion, 'obstacle': obstacle}
 
-    data = {'motion': motion, 'gyro':gyro}
+    # data = {'motion': motion, 'gyro':gyro}
+    data = {'motion': motion}
 
     writer.writerow(data)
     logPhase('wroteData')
     if (output):
         # print("{: >10} {: >10} {: >10} {: >10}".format(*[distFront, distBack, motion, obstacle]))
         print("Motion:", motion)
-        print("Gyro:", gyro)
+        #print("Gyro:", gyro)
 
     return (data)
 
